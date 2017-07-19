@@ -71,7 +71,7 @@ bot.on('message', (message) =>{
                 }
             } else {
                 message.reply(
-                    "Not enough minerals."
+                    "You must build additional pylons."
                 );
             }
             
