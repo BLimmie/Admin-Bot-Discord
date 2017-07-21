@@ -15,15 +15,16 @@ var notifChannel = null;
 var welcomerRole = null;
 var dyskoCounter = 0;
 var prevHMM = false;
-var prevMGS = false;
+var prevMSG;
 //All outcomes should end with "for " or "in ". The comma is for the name of the silenced
 var silencioOutcomes = [
-    ['A sandal flies out of nowhere and strikes ',' in the jaw, rendering him/her unable to speak for '],
-    ['While attempting to use Tatsumaki Bot to fish, ',' accidentally hooked his/her lips shut for '],
-    ['I cast a spell on ',', and his/her mouth turns into a butthole. The spell will wear off in '],
+    ['A sandal flies out of nowhere and strikes ',' in the jaw, rendering them unable to speak for '],
+    ['While attempting to use Tatsumaki Bot to fish, ',' accidentally hooked their lips shut for '],
+    ['I cast a spell on ',', and their mouth turns into a butthole. The spell will wear off in '],
     ['Oops. I accidentally deleted ','\'s mouth. It\'ll come back in '],
     ['Moobot from Twitch sends his regards. ',', your timeout ends in '],
-    ['A flower is pissed at your recent actions. It wrapped its leaves around ', '\'s mouth. I believe it will calm down in ']
+    ['A flower is pissed at your recent actions. It wraps its leaves around ', '\'s mouth. Hopefully the flower will calm down in around '],
+    ["I'm just going to keep my hands on", "'s mouth for "]
 ];
 
 var dyskoOptions = [
@@ -31,8 +32,18 @@ var dyskoOptions = [
     'Whatever you say, Dysko',
     'Tell it like it is, Dysko',
     'I was gonna say that, Dysko',
-    'Smh Dysko stop predicting what I was going to say'
+    'Smh Dysko stop saying what I was going to say'
 ]
+
+function cleanMentiontoSF(mentionString){
+    if(mentionString.charAt(2) == '!'){
+        return mentionString.substring(3,mentionString.length-1);
+    }
+    else{
+        return mentionString.substring(2,mentionString.length-1);
+    }
+}
+
 function silencio(guild, userid){
     var allChannels = guild.channels.array();
     for(i = 0; i < allChannels.length; ++i){
@@ -69,8 +80,13 @@ bot.on('message', (message) =>{
                     if(!(0<s[1]&&s[1]<61)){
                         throw 1;
                     }
+                    bot.fetchUser(cleanMentiontoSF(s[2]));
+                    message.guild.fetchMember(cleanMentiontoSF(s[2]));
                     if(message.mentions.members.first().id == '131622469512593408'){
                         throw 6969;
+                    }
+                    if(message.mentions.members.first().id == '336356363661737984'){
+                        throw 69;
                     }
                     var timeoutTimer = new Timer(
                         {
@@ -100,17 +116,21 @@ bot.on('message', (message) =>{
                         message.channel.send('Invalid amount of time').then(message => {
                             message.delete(4000);
                         });
+                        message.delete();
                     }
                     else if(e == ERRNOusage){
                         message.channel.send("Usage is: %SILENCIO [time(min)] [Tag user]").then(message => {
                             message.delete(4000);
                         });
+                        message.delete();
                     }
                     else if(e == 6969){
                         message.channel.send("You can't just silence my creator like that. Try this command: \"%silencecreator\"");
                     }
-                    
-                    message.delete();
+                    else if(e == 69){
+                        message.channel.send(s[2] + ", SILENCIO!");
+                        message.channel.send("Wait, that's me! Nah I prefer to cast my spells on other people.")
+                    }
                 }
             } else {
                 message.reply(
@@ -130,6 +150,8 @@ bot.on('message', (message) =>{
                     if(s.length != 2 || !(s[1].startsWith('<') && s[1].endsWith('>'))){
                         throw ERRNOusage;
                     }
+                    bot.fetchUser(cleanMentiontoSF(s[1]));
+                    message.guild.fetchMember(cleanMentiontoSF(s[1]));
                     unsilence(message.guild, message.mentions.members.first().id);
                 }
                 catch(e){
@@ -145,13 +167,16 @@ bot.on('message', (message) =>{
         }
         else if(s[0] == '%approve'){
             try{
-                if(!(s.length == 2 || s.length == 3) || !(s[1].startsWith('<') && s[1].endsWith('>'))){
+                if(!(s.length == 2 || s.length == 3) || !(s[1].startsWith('<@') && s[1].endsWith('>'))){
                     throw ERRNOusage;
                 }
                 if(memberRole == null || notifChannel == null || welcomerRole == null){
                     throw ERRNOemptyVars;
                 }
-                let mem = message.mentions.members.first();
+                bot.fetchUser(cleanMentiontoSF(s[1]));
+                message.guild.fetchMember(cleanMentiontoSF(s[1]));
+                var mem = message.mentions.members.first();
+                console.log(mem.displayName);
                 mem.addRole(memberRole).catch(console.error);
                 if(s.length == 3 && additionalRole != null){
                     if(s[2] == 'y' || s[2] == 'Y' || s[2] == 'yes' || s[2] == 'Yes' || s[2] == 'YES'){
@@ -185,13 +210,13 @@ bot.on('message', (message) =>{
                 if(!message.member.hasPermission("MANAGE_GUILD")){
                     throw ERRNOperms;
                 }
-                if(s.length != 4){
+                if(s.length != 5){
                     throw ERRNOusage;
                 }
                 memberRole = message.guild.roles.find("name", s[1]);
                 additionalRole = message.guild.roles.find("name", s[2]);
                 welcomerRole = message.guild.roles.find("name", s[3]);
-                notifChannel = message.channel;
+                notifChannel = message.mentions.channels.first();;
 
                 message.delete();
             }
@@ -202,7 +227,7 @@ bot.on('message', (message) =>{
                     });
                 }
                 else{
-                    message.channel.send("Usage is %adminSetMemberRole [member] [additional] [welcomer]").then(message => {
+                    message.channel.send("Usage is %adminSetMemberRole [member] [additional] [welcomer] [mention channel]").then(message => {
                         message.delete(4000);
                     });
                 }
@@ -264,10 +289,10 @@ bot.on('message', (message) =>{
                 if(!message.member.hasPermission("MANAGE_GUILD")){
                     throw ERRNOperms;
                 }
-                if(s.length != 1){
+                if(s.length != 2){
                     throw ERRNOusage;
                 }
-                notifChannel = message.channel;
+                notifChannel = message.mentions.channels.first();
                 message.delete();
             }
             catch(e){
@@ -277,7 +302,7 @@ bot.on('message', (message) =>{
                     });
                 }
                 else{
-                    message.channel.send("Usage is %adminSetNotificationChannel").then(message => {
+                    message.channel.send("Usage is %adminSetNotificationChannel [mention channel]").then(message => {
                         message.delete(4000);
                     });
                 }
@@ -339,9 +364,9 @@ bot.on('message', (message) =>{
         }
     }
     else if(message.author.id == '125810616169529344'){
-        if(message.content.length > 10){
+        if(message.content.length > 15){
             if(dyskoCounter >= 10){
-                let rand = Math.floor(Math.random()*5);
+                let rand = Math.floor(Math.random()*dyskoOptions.length);
                 message.channel.send(dyskoOptions[rand]);
                 dyskoCounter = 0;
             }
@@ -362,30 +387,18 @@ bot.on('message', (message) =>{
     else{
         prevHMM = false;
     }
-    if(message.content == "!"){
-        if(prevMGS){
-            message.channel.send('!');
-            prevMGS = false;
-        }
-        else{
-            prevMGS = true;
-        }
+    if(message.content == prevMSG && !message.content.includes('<:hmm:317214770900238336>')){
+            message.channel.send(message.content);
     }
     else{
-        prevMGS = false;
+        prevMSG = message.content;
     }
-    if(message.author == '172002275412279296' && message.content.includes(':battery:')){
-        message.channel.send('How did you manage to fish up a battery and not a fish? Batteries roll off the fishing hook.')
-    }
-    if(message.content.length > 25 && (message.content.includes('supreme') || message.content.includes('Supreme') || message.content.includes('SUPREME')) && message.author.id != '336356363661737984'){
-        message.channel.send("I'm going to take your supreme, and shove it right up your ass.")
-        message.channel.send('%silencio <@' + message.author.id + '>');
-    }
-    if(message.content.length > 20 && (message.content.includes('usidore') || message.content.includes('Usidore') || message.content.includes('USIDORE')) && message.author.id != '336356363661737984'){
+    if(message.content.length > 35 && (message.content.includes('usidore') || message.content.includes('Usidore') || message.content.includes('USIDORE')) && message.author.id != '336356363661737984'){
         message.channel.send(
             "I AM USIDORE, Wizard of the 12th Realm of Ephysiyies, Master of Light and Shadow, Manipulator of Magical Delights, Devourer of Chaos, Champion of the Great Halls of Terr'akkas. The elves know me as Fi’ang Yalok. The dwarves know me as Zoenen Hoogstandjes. And I am also known in the Northeast as Gaismunēnas Meistar. And there are other secret names you do not know yet."
         );
     }
+
 });
 
 bot.login('MzM2MzU2MzYzNjYxNzM3OTg0.DE3pew.A1RVEnBz6nAtm8dx7EmL6LZ4FCk');
